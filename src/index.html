@@ -14,6 +14,7 @@
 
   <script>
   import Vue from 'vue/dist/vue.common'
+  import VueElectron from 'vue-electron'
   import VueRouter from 'vue-router'
   import VueMaterial from 'vue-material'
   import VueHead from 'vue-head'
@@ -21,6 +22,7 @@
   import App from './components/app.vue'
   import Index from './components/index.vue'
 
+  Vue.use(VueElectron)
   Vue.use(VueRouter)
   Vue.use(VueMaterial)
   Vue.use(VueHead)

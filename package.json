@@ -47,6 +47,8 @@
         "d3": "^4.8.0",
         "electron-compile": "^6.4.1",
         "electron-devtools-installer": "^2.0.1",
+        "material-design-icons-iconfont": "^3.0.3",
+        "roboto-fontface": "^0.7.0",
         "vue": "^2.1.7",
         "vue-head": "^2.0.11",
         "vue-material": "^0.7.1",

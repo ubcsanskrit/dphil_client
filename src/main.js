@@ -1,6 +1,4 @@
 import { app, BrowserWindow, Menu } from 'electron'
-import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
-import { enableLiveReload } from 'electron-compile'
 import util from 'util'
 import * as _ from 'lodash'
 import appMenu from './menu'
@@ -14,9 +12,11 @@ global._ = _
 let mainWindow
 let defaultMenu
 
-const isDevMode = process.execPath.match(/[\\/]electron/)
+const isDevMode = process.execPath.match(/[\\/]node_modules[\\/]electron[\\/]/)
 
-if (isDevMode) enableLiveReload()
+if (isDevMode) {
+  require('electron-compile').enableLiveReload()
+}
 
 const createWindow = async () => {
   // Create the browser window.
@@ -25,14 +25,17 @@ const createWindow = async () => {
     minHeight: 600
   })
 
-  // and load the index.html of the app.
-  mainWindow.loadURL(`file://${__dirname}/index.html`)
-
   // Open the DevTools.
   if (isDevMode) {
-    await installExtension(VUEJS_DEVTOOLS)
-    mainWindow.webContents.openDevTools()
+    const edt = require('electron-devtools-installer')
+    const installExtension = edt.default
+    const VUEJS_DEVTOOLS = edt.VUEJS_DEVTOOLS
+    installExtension(VUEJS_DEVTOOLS)
+    .then((name) => mainWindow.webContents.openDevTools())
   }
+
+  // and load the index.html of the app.
+  mainWindow.loadURL(`file://${__dirname}/index.html`)
 
   // Emitted when the window is closed.
   mainWindow.on('closed', () => {
@@ -40,6 +43,7 @@ const createWindow = async () => {
     // in an array if your app supports multi windows, this is the time
     // when you should delete the corresponding element.
     mainWindow = null
+    Menu.setApplicationMenu(defaultMenu)
   })
 }
 
@@ -49,6 +53,7 @@ const createWindow = async () => {
 app.on('ready', (launchInfo) => {
   defaultMenu = Menu.getApplicationMenu()
   createWindow()
+  Menu.setApplicationMenu(appMenu)
 })
 
 // Quit when all windows are closed.
@@ -58,6 +63,7 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit()
   }
+  Menu.setApplicationMenu(defaultMenu)
 })
 
 app.on('activate', () => {

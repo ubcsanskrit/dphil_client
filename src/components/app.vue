@@ -34,15 +34,29 @@
         </router-link>
       </md-list-item>
     </md-list>
+    <p>File Loaded: {{openFileTruncated}}</p>
   </md-sidenav>
 </md-layout>
 </template>
 
 <script>
+
 export default {
   computed: {
     headerText () {
       return this.$store.state.headerText
+    },
+    openFileTruncated () {
+      let openFile = this.$store.state.data.openFile
+      if (_.isString(openFile)) {
+        const curLen = openFile.length
+        const maxLen = 25
+        if (curLen > maxLen) {
+          return `\`…${openFile.substring(curLen - (maxLen - 1), curLen)}\``
+        }
+        return openFile
+      }
+      return '[none]'
     }
   },
   methods: {

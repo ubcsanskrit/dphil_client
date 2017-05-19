@@ -13,3 +13,8 @@ html, body, .app {
 .main-content {
   padding: 16px;
 }
+
+.md-sidenav-content > p,
+.md-sidenav-content > span {
+  padding: 8px 16px;
+}

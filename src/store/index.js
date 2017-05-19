@@ -14,7 +14,8 @@ const dataModule = {
     treeData: {},
     treeStats: {},
     currentTree: null,
-    matrix: {}
+    matrixCharacters: {},
+    matrixTaxa: {}
   },
   mutations: {
     openFile (state, filePath) {
@@ -29,8 +30,11 @@ const dataModule = {
     currentTree (state, id) {
       state.currentTree = id
     },
-    matrix (state, matrix) {
-      state.matrix = matrix
+    matrixCharacters (state, characters) {
+      state.matrixCharacters = characters
+    },
+    matrixTaxa (state, taxa) {
+      state.matrixTaxa = taxa
     },
     changed (state, value) {
       state.changed = !!value
@@ -53,7 +57,8 @@ const dataModule = {
       commit('treeData', newData.treeData)
       commit('treeStats', newData.treeStats)
       commit('currentTree', _.keys(state.treeData)[0] || null)
-      commit('matrix', newData.matrix)
+      commit('matrixCharacters', newData.matrix.characters)
+      commit('matrixTaxa', newData.matrix.taxaNames)
       commit('changed', false)
     }
   }

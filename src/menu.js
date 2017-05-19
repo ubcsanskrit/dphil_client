@@ -1,10 +1,26 @@
-import {app, Menu} from 'electron'
+import {app, dialog, Menu, BrowserWindow} from 'electron'
 
 const template = [
   {
     label: 'File',
     submenu: [
-      {label: 'Open'}
+      {
+        label: 'Open',
+        click: function fileOpenClick () {
+          let currentWindow = BrowserWindow.getFocusedWindow()
+          if (_.isNil(currentWindow)) { return }
+          let files = dialog.showOpenDialog({
+            parent: currentWindow,
+            properties: ['openFile'],
+            filters: [
+              {name: 'JSON Data', extensions: ['json', 'jsonld']}
+            ]
+          })
+          if (!_.isEmpty(files)) {
+            currentWindow.webContents.send('loadDataFile', files[0])
+          }
+        }
+      }
     ]
   },
   {
@@ -91,4 +107,4 @@ if (process.platform === 'darwin') {
   ]
 }
 
-export const menu = Menu.buildFromTemplate(template)
+export default Menu.buildFromTemplate(template)

@@ -1,11 +1,18 @@
 import { app, BrowserWindow, Menu } from 'electron'
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
 import { enableLiveReload } from 'electron-compile'
-import { menu } from './menu'
+import util from 'util'
+import * as _ from 'lodash'
+import appMenu from './menu'
+
+// A few globals
+global.util = util
+global._ = _
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 let mainWindow
+let defaultMenu
 
 const isDevMode = process.execPath.match(/[\\/]electron/)
 
@@ -40,7 +47,7 @@ const createWindow = async () => {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.on('ready', (launchInfo) => {
-  Menu.setApplicationMenu(menu)
+  defaultMenu = Menu.getApplicationMenu()
   createWindow()
 })
 
@@ -63,3 +70,10 @@ app.on('activate', () => {
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and import them here.
+app.on('browser-window-blur', (window) => {
+  Menu.setApplicationMenu(defaultMenu)
+})
+
+app.on('browser-window-focus', (window) => {
+  Menu.setApplicationMenu(appMenu)
+})

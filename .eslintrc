@@ -1,7 +1,18 @@
 {
-  "extends": "standard",
-  "env": { "browser": true, "node": true },
+  "extends": [
+    "standard",
+    "plugin:lodash/canonical"
+  ],
+  "env": {
+    "browser": true,
+    "node": true
+  },
+  "globals": {
+    "_": true,
+    "util": true
+  },
   "plugins": [
-    "html"
+    "html",
+    "lodash"
   ]
 }

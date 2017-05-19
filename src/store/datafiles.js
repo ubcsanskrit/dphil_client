@@ -54,5 +54,9 @@ export function loadDataFromFile (filePath) {
     newData.treeStats = _.mapValues(jsonData.trees, 'stats')
   }
 
+  if (_.has(jsonData, 'matrix')) {
+    newData.matrix = jsonData.matrix
+  }
+
   return newData
 }

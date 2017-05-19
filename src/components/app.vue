@@ -17,14 +17,20 @@
     </md-toolbar>
     <md-list>
       <md-list-item>
-        <router-link to="/" exact>
+        <router-link to="/" exact @click.native="toggleLeftSidenav">
           <md-icon>home</md-icon> <span>Home</span>
         </router-link>
       </md-list-item>
 
       <md-list-item>
-        <router-link to="/tree" exact>
-          <md-icon>send</md-icon> <span>Tree View</span>
+        <router-link to="/tree" exact @click.native="toggleLeftSidenav">
+          <md-icon>device_hub</md-icon> <span>Tree View</span>
+        </router-link>
+      </md-list-item>
+
+      <md-list-item>
+        <router-link to="/matrix" exact @click.native="toggleLeftSidenav">
+          <md-icon>view_module</md-icon> <span>Matrix View</span>
         </router-link>
       </md-list-item>
     </md-list>

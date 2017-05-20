@@ -23,6 +23,7 @@
   import VueRouter from 'vue-router'
   import VueMaterial from 'vue-material'
   import VueHead from 'vue-head'
+  import VueLodash from 'vue-lodash/dist/vue-lodash.min'
 
   // Vue Store
   import store from './store'
@@ -39,6 +40,7 @@
   Vue.use(VueRouter)
   Vue.use(VueMaterial)
   Vue.use(VueHead)
+  Vue.use(VueLodash, _)
 
   const router = new VueRouter({
     routes: [

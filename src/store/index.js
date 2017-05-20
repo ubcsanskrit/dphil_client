@@ -15,29 +15,43 @@ const dataModule = {
     treeStats: {},
     currentTree: null,
     matrixCharacters: {},
-    matrixTaxa: {}
+    matrixTaxa: {},
+    reconstructed: {},
+    navCharsPerPage: 8,
+    navCharStart: 1
   },
   mutations: {
     openFile (state, filePath) {
-      state.openFile = filePath
+      Vue.set(state, 'openFile', filePath)
     },
     treeData (state, treeData) {
-      state.treeData = treeData
+      Vue.set(state, 'treeData', treeData)
     },
     treeStats (state, treeStats) {
-      state.treeStats = treeStats
+      Vue.set(state, 'treeStats', treeStats)
     },
     currentTree (state, id) {
       state.currentTree = id
     },
     matrixCharacters (state, characters) {
-      state.matrixCharacters = characters
+      Vue.set(state, 'matrixCharacters', characters)
     },
     matrixTaxa (state, taxa) {
       state.matrixTaxa = taxa
     },
     changed (state, value) {
       state.changed = !!value
+    },
+    navCharsPerPage (state, value) {
+      state.navCharsPerPage = value
+    },
+    navCharStart (state, value) {
+      state.navCharStart = value
+    }
+  },
+  getters: {
+    numChars (state) {
+      return _.size(state.matrixCharacters)
     }
   },
   actions: {

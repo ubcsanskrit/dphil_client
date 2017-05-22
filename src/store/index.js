@@ -46,6 +46,16 @@ const dataModule = {
     changed (state, value) {
       state.changed = !!value
     },
+    reconstructed (state, {rootId, charId, value}) {
+      if (_.isUndefined(state.reconstructed[rootId])) {
+        Vue.set(state.reconstructed, rootId, {})
+      }
+      if (_.isNil(value)) {
+        Vue.delete(state.reconstructed[rootId], charId)
+      } else {
+        Vue.set(state.reconstructed[rootId], charId, value)
+      }
+    },
     navCharsPerPage (state, value) {
       state.navCharsPerPage = value
     },
@@ -55,28 +65,85 @@ const dataModule = {
   },
   getters: {
     currentTreeData (state) {
-      return state.treeData[state.currentTree]
+      return state.treeData[state.currentTree] || {}
+    },
+    currentTreeNodes (state, getters) {
+      let nodes = {}
+      function walkNode (node) {
+        nodes[node.id] = node
+        _.forEach(node.children, walkNode)
+      }
+      walkNode(getters.currentTreeData)
+      return nodes
     },
     currentNodeData (state, getters) {
-      return getters.currentTreeData
+      return _.get(getters.currentTreeNodes, state.currentNode)
     },
-    leavesForCurrent (state, getters) {
-      return getters.currentNodeData
+    nodesFromCurrent (state, getters) {
+      let nodes = {}
+      function walkNode (node) {
+        nodes[node.id] = node
+        _.forEach(node.children, walkNode)
+      }
+      if (!_.isNil(getters.currentNodeData)) {
+        walkNode(getters.currentNodeData)
+      }
+      return nodes
+    },
+    taxaFromCurrent (state, getters) {
+      let taxa = {}
+      _.forEach(getters.nodesFromCurrent, function (node) {
+        if (_.isEmpty(node.children)) { taxa[node.id] = node.name }
+      })
+      return taxa
     },
     matrixSliceChars (state, getters) {
-      if (state.currentTreeData === state.currentNodeData) {
+      if (getters.currentTreeData === getters.currentNodeData) {
         return state.matrixCharacters
       }
-      return 'nonRoot'
-    },
-    matrixSliceTaxa (state, getters) {
-      if (state.currentTreeData === state.currentNodeData) {
-        return state.matrixTaxa
-      }
-      return 'nonRoot'
+      let newChars = {}
+      _.forEach(state.matrixCharacters, function (char, charId) {
+        let id = char.id
+
+        let states = {}
+        let symbols = {}
+        let taxaStates = {}
+        let statesTaxa = {}
+        let stateTotals = {}
+
+        _.forEach(char.taxaStates, function (state, taxon) {
+          if (_.has(getters.taxaFromCurrent, taxon)) {
+            taxaStates[taxon] = state
+            if (_.isUndefined(statesTaxa[state])) { statesTaxa[state] = [] }
+            if (_.isUndefined(stateTotals[state])) { stateTotals[state] = 0 }
+            statesTaxa[state].push(taxon)
+            stateTotals[state] += 1
+          }
+        })
+
+        _.forEach(char.states, function (state, symbol) {
+          if (_.has(statesTaxa, state)) {
+            states[symbol] = state
+            symbols[state] = symbol
+          }
+        })
+
+        newChars[id] = {
+          id,
+          states,
+          symbols,
+          taxaStates,
+          statesTaxa,
+          stateTotals
+        }
+      })
+      return newChars
     },
     numChars (state, getters) {
       return _.size(getters.matrixSliceChars)
+    },
+    reconstructedCurrent (state, getters) {
+      return state.reconstructed[state.currentNode] || {}
     }
   },
   actions: {

@@ -46,8 +46,9 @@
   min-height: 100%;
 }
 
-.md-table td {
-  white-space: nowrap;
+.md-table td .md-table-cell-container {
+  white-space: normal;
+  word-break: break-all;
 }
 
 .md-table .md-table-cell {
@@ -94,7 +95,7 @@ export default {
     }),
     ...mapGetters('data', {
       characters: 'matrixSliceChars',
-      taxa: 'matrixSliceTaxa'
+      taxa: 'taxaFromCurrent'
     })
   },
   mounted () {

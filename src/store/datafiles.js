@@ -27,7 +27,8 @@ function parseTrees (trees) {
 }
 
 export function loadDataFromFile (filePath) {
-  filePath = path.normalize(filePath)
+  filePath = path.normalize(path.resolve(filePath))
+  console.debug(filePath)
 
   let data
   try {

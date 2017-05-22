@@ -69,12 +69,13 @@
 
 <script>
 
-import { mapState } from 'vuex'
+import { mapState, mapGetters } from 'vuex'
+import ReadingSelector from './reading_selector.vue'
 import MatrixNav from './matrixnav'
 
 export default {
   name: 'matrix',
-  components: { MatrixNav },
+  components: { MatrixNav, ReadingSelector },
   data: function () {
     return {
       headerText: 'Matrix View'
@@ -82,10 +83,12 @@ export default {
   },
   computed: {
     ...mapState('data', {
-      characters: 'matrixCharacters',
-      taxa: 'matrixTaxa',
       navCharStart: 'navCharStart',
       navCharsPerPage: 'navCharsPerPage'
+    }),
+    ...mapGetters('data', {
+      characters: 'matrixSliceChars',
+      taxa: 'matrixSliceTaxa'
     })
   },
   mounted () {

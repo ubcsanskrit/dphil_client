@@ -100,11 +100,11 @@ export default {
   },
   computed: {
     ...mapState('data', {
-      characters: 'matrixCharacters',
-      taxa: 'matrixTaxa',
       navCharStart: 'navCharStart'
     }),
     ...mapGetters('data', {
+      characters: 'matrixSliceChars',
+      taxa: 'matrixSliceTaxa',
       numChars: 'numChars'
     }),
     maxTarget () {
@@ -149,7 +149,6 @@ export default {
       return this.$store.commit('data/navCharsPerPage', newNavCharsPerPage)
     },
     processKeypress (event) {
-      console.log(event)
       if (event.code === 'ArrowLeft') {
         event.shiftKey ? this.backPage() : this.backOne()
       } else if (event.code === 'ArrowRight') {

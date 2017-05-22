@@ -15,6 +15,12 @@
         </md-table-row>
       </md-table-header>
       <md-table-body>
+        <md-table-row>
+          <md-table-cell><em>(Consensus)</em></md-table-cell>
+          <template v-for="cindex in _.range(navCharStart, navCharStart + navCharsPerPage)">
+            <reading-Selector :char-index="cindex"/>
+          </template>
+        </md-table-row>
         <md-table-row v-for="(name, tindex) in taxa" v-bind:key="`row-${tindex}`">
           <md-table-cell class="taxaName" v-bind:key="`t${tindex}`"><strong>({{ tindex }}) {{ name }}</strong></md-table-cell>
           <md-table-cell class="character"

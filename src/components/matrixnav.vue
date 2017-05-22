@@ -104,7 +104,6 @@ export default {
     }),
     ...mapGetters('data', {
       characters: 'matrixSliceChars',
-      taxa: 'matrixSliceTaxa',
       numChars: 'numChars'
     }),
     maxTarget () {

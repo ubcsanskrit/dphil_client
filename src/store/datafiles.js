@@ -1,5 +1,7 @@
 import fs from 'fs'
 import path from 'path'
+import * as d3 from 'd3'
+import MatrixCharacter from '../classes/character'
 
 function parseNode (nodeId, nodes) {
   let node = nodes[nodeId]
@@ -22,7 +24,15 @@ function parseNode (nodeId, nodes) {
 function parseTrees (trees) {
   if (!_.isPlainObject(trees)) { return {} }
   return _.mapValues(trees, function parseOneTree (tree, index) {
-    return parseNode(tree.rootId, tree.nodes)
+    let hierarchy = d3.hierarchy(parseNode(tree.rootId, tree.nodes), (d) => d.children)
+      .sum((d) => d.children ? 0 : 1)
+      .sort((a, b) => (a.value - b.value) || d3.ascending(a.data.length, b.data.length))
+    return {
+      rootId: tree.rootId,
+      nodes: _.keyBy(hierarchy.descendants(), (val) => val.data.id),
+      stats: tree.stats,
+      hierarchy
+    }
   })
 }
 
@@ -57,6 +67,9 @@ export function loadDataFromFile (filePath) {
 
   if (_.has(jsonData, 'matrix')) {
     newData.matrix = jsonData.matrix
+    newData.matrix.characters = _.mapValues(newData.matrix.characters, (char, id) => {
+      return new MatrixCharacter(char)
+    })
   }
 
   return newData

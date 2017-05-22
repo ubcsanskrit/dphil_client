@@ -1,7 +1,7 @@
 import * as d3 from 'd3'
 import store from './store'
 
-export function phylogram (selector, nodes, stats, params) {
+export function phylogram (selector, tree, params) {
   let defaults = {
     outerRadius: 400,
     innerRadius: 200,
@@ -10,7 +10,7 @@ export function phylogram (selector, nodes, stats, params) {
   let p = _.merge({}, defaults, params)
 
   let statsList = []
-  _.forOwn(stats, function (value, key) { statsList.push(`${_.startCase(key)}: ${value}`) })
+  _.forOwn(tree.stats, function (value, key) { statsList.push(`${_.startCase(key)}: ${value}`) })
 
   let color = d3.scaleOrdinal()
       .domain(statsList)
@@ -105,10 +105,11 @@ export function phylogram (selector, nodes, stats, params) {
   let chart = svg.append('g')
       // .attr('transform', 'translate(' + outerRadius + ',' + (outerRadius / 1.5) + ')')
 
-  let root = d3.hierarchy(nodes, function (d) { return d.children })
-      .sum(function (d) { return d.children ? 0 : 1 })
-      .sort(function (a, b) { return (a.value - b.value) || d3.ascending(a.data.length, b.data.length) })
+  // let root = d3.hierarchy(nodes, function (d) { return d.children })
+  //     .sum(function (d) { return d.children ? 0 : 1 })
+  //     .sort(function (a, b) { return (a.value - b.value) || d3.ascending(a.data.length, b.data.length) })
 
+  let root = tree.hierarchy
   cluster(root)
 
   setRadius(root, root.data.length = 0, p.innerRadius / maxLength(root))
@@ -178,24 +179,22 @@ export function phylogram (selector, nodes, stats, params) {
   }
 
   function updateSelected () {
-    let id = store.state.data.currentNode
+    let id = store.state.data.selectedNodeId
     if (_.isNil(id)) {
-      id = root.data.id
-      store.commit('data/currentNode', id)
+      store.commit('data/selectedNodeId', root.data.id)
     }
 
     d3.selectAll('text')
     .classed('label--selected', false)
 
-    d3.selectAll(`[data-node-id='${id}']`)
+    d3.select(`[data-node-id='${id}']`)
     .classed('label--selected', true)
   }
   updateSelected()
 
   function selectNode () {
-    return function (d) {
-      let id = _.get(d, 'data.id')
-      store.commit('data/currentNode', id)
+    return (d) => {
+      store.commit('data/selectedNodeId', _.get(d, 'data.id'))
       updateSelected()
     }
   }
@@ -208,7 +207,6 @@ export function phylogram (selector, nodes, stats, params) {
     root,
     update (params) {
       if (_.has(params, 'showLengths') && params.showLengths !== p.showLengths) {
-        console.debug('showLengths changed')
         p.showLengths = params.showLengths
         updateLengths()
       }

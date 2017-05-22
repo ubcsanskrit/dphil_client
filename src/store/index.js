@@ -12,9 +12,8 @@ const dataModule = {
     changed: false,
     openFile: null,
     treeData: {},
-    treeStats: {},
-    currentTree: null,
-    currentNode: null,
+    selectedTreeId: null,
+    selectedNodeId: null,
     matrixCharacters: {},
     matrixTaxa: {},
     reconstructed: {},
@@ -28,14 +27,11 @@ const dataModule = {
     treeData (state, treeData) {
       Vue.set(state, 'treeData', treeData)
     },
-    treeStats (state, treeStats) {
-      Vue.set(state, 'treeStats', treeStats)
+    selectedTreeId (state, id) {
+      state.selectedTreeId = id
     },
-    currentTree (state, id) {
-      state.currentTree = id
-    },
-    currentNode (state, id) {
-      state.currentNode = id
+    selectedNodeId (state, id) {
+      state.selectedNodeId = id
     },
     matrixCharacters (state, characters) {
       Vue.set(state, 'matrixCharacters', characters)
@@ -64,86 +60,41 @@ const dataModule = {
     }
   },
   getters: {
-    currentTreeData (state) {
-      return state.treeData[state.currentTree] || {}
+    numTrees (state) {
+      return _.size(state.treeData)
     },
-    currentTreeNodes (state, getters) {
-      let nodes = {}
-      function walkNode (node) {
-        nodes[node.id] = node
-        _.forEach(node.children, walkNode)
-      }
-      walkNode(getters.currentTreeData)
-      return nodes
+    selectedTree (state) {
+      return _.get(state.treeData, state.selectedTreeId) || {}
     },
-    currentNodeData (state, getters) {
-      return _.get(getters.currentTreeNodes, state.currentNode)
+    selectedTreeNodes (state, getters) {
+      return _.get(getters.selectedTree, 'nodes')
+    },
+    selectedNode (state, getters) {
+      return _.get(getters.selectedTree, `nodes.${state.selectedNodeId}`)
     },
     nodesFromCurrent (state, getters) {
-      let nodes = {}
-      function walkNode (node) {
-        nodes[node.id] = node
-        _.forEach(node.children, walkNode)
+      if (!_.isNil(getters.selectedNode)) {
+        return getters.selectedNode.descendants()
       }
-      if (!_.isNil(getters.currentNodeData)) {
-        walkNode(getters.currentNodeData)
-      }
-      return nodes
     },
     taxaFromCurrent (state, getters) {
-      let taxa = {}
-      _.forEach(getters.nodesFromCurrent, function (node) {
-        if (_.isEmpty(node.children)) { taxa[node.id] = node.name }
-      })
-      return taxa
+      let newRoot = getters.selectedNode
+      if (_.isNil(newRoot)) { return }
+      return _.keyBy(newRoot.leaves(), (node) => node.data.id)
     },
     matrixSliceChars (state, getters) {
-      if (getters.currentTreeData === getters.currentNodeData) {
+      if (_.get(state.selectedTree, 'hierarchy') === getters.selectedNode) {
         return state.matrixCharacters
       }
-      let newChars = {}
-      _.forEach(state.matrixCharacters, function (char, charId) {
-        let id = char.id
-
-        let states = {}
-        let symbols = {}
-        let taxaStates = {}
-        let statesTaxa = {}
-        let stateTotals = {}
-
-        _.forEach(char.taxaStates, function (state, taxon) {
-          if (_.has(getters.taxaFromCurrent, taxon)) {
-            taxaStates[taxon] = state
-            if (_.isUndefined(statesTaxa[state])) { statesTaxa[state] = [] }
-            if (_.isUndefined(stateTotals[state])) { stateTotals[state] = 0 }
-            statesTaxa[state].push(taxon)
-            stateTotals[state] += 1
-          }
-        })
-
-        _.forEach(char.states, function (state, symbol) {
-          if (_.has(statesTaxa, state)) {
-            states[symbol] = state
-            symbols[state] = symbol
-          }
-        })
-
-        newChars[id] = {
-          id,
-          states,
-          symbols,
-          taxaStates,
-          statesTaxa,
-          stateTotals
-        }
+      return _.mapValues(state.matrixCharacters, (char, id) => {
+        return char.filterData({nodes: _.keys(getters.taxaFromCurrent)})
       })
-      return newChars
     },
     numChars (state, getters) {
       return _.size(getters.matrixSliceChars)
     },
     reconstructedCurrent (state, getters) {
-      return state.reconstructed[state.currentNode] || {}
+      return state.reconstructed[state.selectedNodeId] || {}
     }
   },
   actions: {
@@ -161,9 +112,8 @@ const dataModule = {
       let newData = loadDataFromFile(filePath)
       commit('openFile', newData.openFile)
       commit('treeData', newData.treeData)
-      commit('treeStats', newData.treeStats)
-      commit('currentTree', _.keys(state.treeData)[0] || null)
-      commit('currentNode', _.get(state.treeData, `${state.currentTree}.id`) || null)
+      commit('selectedTreeId', _.keys(state.treeData)[0])
+      commit('selectedNodeId', _.get(state.treeData, `${state.selectedTreeId}.rootId`))
       commit('matrixCharacters', newData.matrix.characters)
       commit('matrixTaxa', newData.matrix.taxaNames)
       commit('changed', false)

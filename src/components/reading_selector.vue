@@ -1,13 +1,13 @@
 <template>
-<md-table-cell>
+<md-table-cell class="reading-select-cell">
   <md-input-container>
-    <md-select class="reading-select" :name="`rc${charIndex}`" :id="`rc${charIndex}`" :key="`rc${charIndex}`" v-model="currentSymbol"
+    <md-select :name="`rc${charIndex}`" :id="`rc${charIndex}`" :key="`rc${charIndex}`" v-model="currentState"
       @input="updateSelect">
-      <md-option :value="null" :class="charConsensus[bestSymbol].class" >
-        * {{charConsensus[bestSymbol].state}}
+      <md-option :value="null" :class="charConsensus[bestState].class" >
+        * {{bestState}}
       </md-option>
-      <md-option :value="symbol" :class="char.class" v-for="(char, symbol) in charConsensus">
-        {{char.state}}
+      <md-option :value="state" :class="char.class" v-for="(char, state) in charConsensus">
+        {{state}}
       </md-option>
     </md-select>
   </md-input-container>
@@ -15,7 +15,8 @@
 </template>
 
 <style>
-.reading-select * {
+
+.reading-select-cell select {
   font-weight: 500;
 }
 
@@ -54,7 +55,7 @@ export default {
   props: ['charIndex'],
   computed: {
     ...mapState('data', {
-      currentNode: 'currentNode'
+      selectedNodeId: 'selectedNodeId'
     }),
     ...mapGetters('data', {
       characters: 'matrixSliceChars',
@@ -66,14 +67,14 @@ export default {
       let totalTaxa = _.size(this.taxa)
       let accountedTaxa = 0
       let consensus = {}
-      _.forEach(char.states, (state, symbol) => {
-        let total = char.stateTotals[state]
+      _.forEach(char.symbols, (symbol, state) => {
+        let total = _.toInteger(char.stateTotals[state])
         accountedTaxa += total
         let prevalence = _.round(total / totalTaxa, 2)
         let prevGroup = (_.round(prevalence * 4) / 4) * 100
         let className = `prev-${prevGroup}`
-        consensus[symbol] = {
-          value: symbol,
+        consensus[state] = {
+          symbol,
           class: className,
           state,
           total,
@@ -85,9 +86,9 @@ export default {
         let prevalence = _.round(total / totalTaxa, 2)
         let prevGroup = (_.round(prevalence * 4) / 4) * 100
         let className = `prev-${prevGroup}`
-        consensus['-'] = {
-          value: '-',
-          state: ' ',
+        consensus[''] = {
+          symbol: '-',
+          state: '',
           class: className,
           total,
           prevalence
@@ -95,13 +96,13 @@ export default {
       }
       return consensus
     },
-    bestSymbol () {
-      let sym = _.maxBy(_.keys(this.charConsensus), (o) => {
+    bestState () {
+      let state = _.maxBy(_.keys(this.charConsensus), (o) => {
         return this.charConsensus[o].total
       })
-      return this.charConsensus[sym].value
+      return this.charConsensus[state].state
     },
-    currentSymbol () {
+    currentState () {
       if (!_.isNil(this.reconstructed[this.charIndex])) {
         return this.reconstructed[this.charIndex]
       }
@@ -110,16 +111,18 @@ export default {
   },
   methods: {
     updateSelect (value) {
-      this.$store.commit('data/reconstructed', {
-        rootId: this.currentNode,
-        charId: this.charIndex,
-        value: value
-      })
+      if (this.currentState !== value) {
+        this.$store.commit('data/reconstructed', {
+          rootId: this.selectedNodeId,
+          charId: this.charIndex,
+          value: value
+        })
+      }
       let element = document.getElementById(`rc${this.charIndex}`).closest('.md-table-cell-container')
 
       element.classList.remove('default', 'prev-0', 'prev-25', 'prev-50', 'prev-75', 'prev-100')
       if (_.isNil(value)) {
-        element.classList.add(this.charConsensus[this.bestSymbol].class, 'default')
+        element.classList.add(this.charConsensus[this.bestState].class, 'default')
       } else {
         element.classList.add(this.charConsensus[value].class)
       }

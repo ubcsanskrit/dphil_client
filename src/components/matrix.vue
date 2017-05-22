@@ -21,8 +21,8 @@
             <reading-Selector :char-index="cindex"/>
           </template>
         </md-table-row>
-        <md-table-row v-for="(name, tindex) in taxa" v-bind:key="`row-${tindex}`">
-          <md-table-cell class="taxaName" v-bind:key="`t${tindex}`"><strong>({{ tindex }}) {{ name }}</strong></md-table-cell>
+        <md-table-row v-for="(node, tindex) in taxa" v-bind:key="`row-${tindex}`">
+          <md-table-cell class="taxaName" v-bind:key="`t${tindex}`"><strong>({{ tindex }}) {{ node.data.name }}</strong></md-table-cell>
           <md-table-cell class="character"
             v-for="cindex in _.range(navCharStart, navCharStart + navCharsPerPage)"
             v-bind:key="`${tindex}-${cindex}`">

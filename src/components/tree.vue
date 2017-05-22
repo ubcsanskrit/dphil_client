@@ -86,7 +86,7 @@ export default {
   data: function () {
     return {
       headerText: 'Tree View',
-      showLengths: true,
+      showLengths: false,
       currentPhylogram: null
     }
   },

@@ -1,4 +1,5 @@
 import * as d3 from 'd3'
+import store from './store'
 
 export function phylogram (selector, nodes, stats, params) {
   let defaults = {
@@ -49,6 +50,14 @@ export function phylogram (selector, nodes, stats, params) {
 
   function linkExtensionConstant (d) {
     return linkStep(d.target.x, d.target.y, d.target.x, p.innerRadius)
+  }
+
+  function labelVariable (d) {
+    return 'rotate(' + (d.x - 90) + ')translate(' + (d.radius + 0.5) + ', 0)' + (d.x < 180 ? '' : 'rotate(180)')
+  }
+
+  function labelConstant (d) {
+    return 'rotate(' + (d.x - 90) + ')translate(' + (d.y + 0.5) + ', 0)' + (d.x < 180 ? '' : 'rotate(180)')
   }
 
   // Like d3.svg.diagonal.radial, but with square corners.
@@ -123,21 +132,38 @@ export function phylogram (selector, nodes, stats, params) {
       .attr('stroke', function (d) { return d.target.color })
 
   chart.append('g')
-      .attr('class', 'labels')
+      .attr('class', 'labels leaves')
       .selectAll('text')
       .data(root.leaves())
       .enter().append('text')
       .attr('dy', '.31em')
-      .attr('transform', function (d) { return 'rotate(' + (d.x - 90) + ')translate(' + (p.innerRadius + 4) + ',0)' + (d.x < 180 ? '' : 'rotate(180)') })
+      .attr('transform', function (d) { return 'rotate(' + (d.x - 90) + ')translate(' + (d.y + 4) + ', 0)' + (d.x < 180 ? '' : 'rotate(180)') })
       .attr('text-anchor', function (d) { return d.x < 180 ? 'start' : 'end' })
       .text(function (d) { return _.replace(d.data.name, /_/g, ' ') })
+      .attr('data-node-id', function (d) { return d.data.id })
       .on('mouseover', mouseovered(true))
       .on('mouseout', mouseovered(false))
+      .on('click', selectNode(this))
+
+  let intermediates = chart.append('g')
+       .attr('class', 'labels intermediate')
+       .selectAll('text')
+       .data(_.filter(root.descendants(), 'children'))
+       .enter().append('text')
+       .attr('dy', '.31em')
+       .attr('transform', p.showLengths ? labelVariable : labelConstant)
+       .attr('text-anchor', function (d) { return d.x < 180 ? 'start' : 'end' })
+       .text(function (d) { return _.replace(d.data.name, /_/g, ' ') })
+       .attr('data-node-id', function (d) { return d.data.id })
+       .on('mouseover', mouseovered(true))
+       .on('mouseout', mouseovered(false))
+       .on('click', selectNode(this))
 
   function updateLengths () {
     var t = d3.transition().duration(750)
     linkExtension.transition(t).attr('d', p.showLengths ? linkExtensionVariable : linkExtensionConstant)
     link.transition(t).attr('d', p.showLengths ? linkVariable : linkConstant)
+    intermediates.transition(t).attr('transform', p.showLengths ? labelVariable : labelConstant)
   }
 
   function mouseovered (active) {
@@ -148,6 +174,29 @@ export function phylogram (selector, nodes, stats, params) {
         d3.select(d.linkNode).classed('link--active', active).each(moveToFront)
         d = d.parent
       } while (d)
+    }
+  }
+
+  function updateSelected () {
+    let id = store.state.data.currentNode
+    if (_.isNil(id)) {
+      id = root.data.id
+      store.commit('data/currentNode', id)
+    }
+
+    d3.selectAll('text')
+    .classed('label--selected', false)
+
+    d3.selectAll(`[data-node-id='${id}']`)
+    .classed('label--selected', true)
+  }
+  updateSelected()
+
+  function selectNode () {
+    return function (d) {
+      let id = _.get(d, 'data.id')
+      store.commit('data/currentNode', id)
+      updateSelected()
     }
   }
 
@@ -163,6 +212,7 @@ export function phylogram (selector, nodes, stats, params) {
         p.showLengths = params.showLengths
         updateLengths()
       }
+      updateSelected()
     }
   }
 }

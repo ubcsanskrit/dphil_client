@@ -54,8 +54,13 @@ text.labels:hover {
   cursor: pointer;
 }
 
+text.label--selected {
+  font-weight: 700;
+  fill: blue !important;
+}
+
 .link--active {
-  stroke: red !important;
+  stroke: red;
   stroke-width: 1.5px;
 }
 
@@ -97,14 +102,18 @@ export default {
   },
   methods: {
     setCurrentTree (treeId) {
-      if (this.currentTree !== treeId) { this.$store.commit('data/currentTree', treeId) }
+      if (this.currentTree !== treeId) {
+        this.$store.commit('data/currentNode', null)
+        this.$store.commit('data/currentTree', treeId)
+      }
     },
     updateTreeView () {
       console.log('updateTreeView')
       if (!_.has(this.treeData, this.currentTree)) { return }
       let treeBox = document.getElementById('tree')
       if (treeBox !== null) { treeBox.innerHTML = '' }
-      this.currentPhylogram = phylogram('#tree', this.treeData[this.currentTree], this.treeStats[this.currentTree])
+      this.currentPhylogram = phylogram('#tree', this.treeData[this.currentTree],
+        this.treeStats[this.currentTree], { showLengths: this.showLengths })
     }
   },
   watch: {

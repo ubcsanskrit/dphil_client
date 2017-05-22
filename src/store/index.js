@@ -14,6 +14,7 @@ const dataModule = {
     treeData: {},
     treeStats: {},
     currentTree: null,
+    currentNode: null,
     matrixCharacters: {},
     matrixTaxa: {},
     reconstructed: {},
@@ -33,6 +34,9 @@ const dataModule = {
     currentTree (state, id) {
       state.currentTree = id
     },
+    currentNode (state, id) {
+      state.currentNode = id
+    },
     matrixCharacters (state, characters) {
       Vue.set(state, 'matrixCharacters', characters)
     },
@@ -50,8 +54,29 @@ const dataModule = {
     }
   },
   getters: {
-    numChars (state) {
-      return _.size(state.matrixCharacters)
+    currentTreeData (state) {
+      return state.treeData[state.currentTree]
+    },
+    currentNodeData (state, getters) {
+      return getters.currentTreeData
+    },
+    leavesForCurrent (state, getters) {
+      return getters.currentNodeData
+    },
+    matrixSliceChars (state, getters) {
+      if (state.currentTreeData === state.currentNodeData) {
+        return state.matrixCharacters
+      }
+      return 'nonRoot'
+    },
+    matrixSliceTaxa (state, getters) {
+      if (state.currentTreeData === state.currentNodeData) {
+        return state.matrixTaxa
+      }
+      return 'nonRoot'
+    },
+    numChars (state, getters) {
+      return _.size(getters.matrixSliceChars)
     }
   },
   actions: {
@@ -71,6 +96,7 @@ const dataModule = {
       commit('treeData', newData.treeData)
       commit('treeStats', newData.treeStats)
       commit('currentTree', _.keys(state.treeData)[0] || null)
+      commit('currentNode', _.get(state.treeData, `${state.currentTree}.id`) || null)
       commit('matrixCharacters', newData.matrix.characters)
       commit('matrixTaxa', newData.matrix.taxaNames)
       commit('changed', false)

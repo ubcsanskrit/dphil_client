@@ -58,7 +58,6 @@
   })
   app.$mount('#app')
 
-  store.dispatch('data/loadDataFile', 'src/default_dataset.jsonld')
   ipcRenderer.on('loadDataFile', (event, dataFile) => {
     store.dispatch('data/loadDataFile', dataFile)
   })

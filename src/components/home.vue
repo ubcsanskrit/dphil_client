@@ -1,7 +1,6 @@
 <template>
 <md-layout class="main-content" md-column>
   <md-layout style="flex: 0 0 auto">
-    <span class="md-subheading">File Loaded: `{{fileLoaded}}`</span>
   </md-layout>
 </md-layout>
 </template>

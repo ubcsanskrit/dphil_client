@@ -4,8 +4,8 @@
     <md-layout class="field-group" md-flex md-row>
       <md-layout md-flex-offset="5" style="flex: 0 0 auto">
         <md-input-container>
-          <label for="currentTree">Tree ID</label>
-          <md-select name="currentTree" id="currentTree" v-model="currentTree"
+          <label for="selectedTreeId">Tree ID</label>
+          <md-select name="selectedTreeId" id="selectedTreeId" v-model="selectedTreeId"
                      @change="updateTreeView" @input="setCurrentTree">
             <md-option :value="treeId"  v-for="(tree, treeId) in treeData">
                 {{treeId}}
@@ -54,8 +54,13 @@ text.labels:hover {
   cursor: pointer;
 }
 
+text.label--selected {
+  font-weight: 700;
+  fill: blue !important;
+}
+
 .link--active {
-  stroke: red !important;
+  stroke: red;
   stroke-width: 1.5px;
 }
 
@@ -73,7 +78,7 @@ text.label--active:hover {
 
 <script>
 
-import { mapState } from 'vuex'
+import { mapState, mapGetters } from 'vuex'
 import { phylogram } from '../treeoflife'
 
 export default {
@@ -81,36 +86,41 @@ export default {
   data: function () {
     return {
       headerText: 'Tree View',
-      showLengths: true,
+      showLengths: false,
       currentPhylogram: null
     }
   },
   computed: {
-    numTrees: function () {
-      return _.size(this.treeData)
-    },
     ...mapState('data', {
       treeData: 'treeData',
-      treeStats: 'treeStats',
-      currentTree: 'currentTree'
+      selectedTreeId: 'selectedTreeId',
+      selectedNodeId: 'selectedNodeId'
+    }),
+    ...mapGetters('data', {
+      numTrees: 'numTrees',
+      selectedTree: 'selectedTree'
     })
   },
   methods: {
     setCurrentTree (treeId) {
-      if (this.currentTree !== treeId) { this.$store.commit('data/currentTree', treeId) }
+      if (this.selectedTreeId !== treeId) {
+        this.$store.commit('data/selectedNodeId', null)
+        this.$store.commit('data/selectedTreeId', treeId)
+      }
     },
     updateTreeView () {
-      console.log('updateTreeView')
-      if (!_.has(this.treeData, this.currentTree)) { return }
+      if (_.isNil(this.selectedTree)) { return }
       let treeBox = document.getElementById('tree')
-      if (treeBox !== null) { treeBox.innerHTML = '' }
-      this.currentPhylogram = phylogram('#tree', this.treeData[this.currentTree], this.treeStats[this.currentTree])
+      if (!_.isNil(treeBox)) { treeBox.innerHTML = '' }
+      this.currentPhylogram = phylogram('#tree', this.selectedTree,
+        { showLengths: this.showLengths })
     }
   },
   watch: {
     showLengths (newVal) {
-      if (_.isNil(this.currentPhylogram)) { return }
-      this.currentPhylogram.update({ showLengths: newVal })
+      if (!_.isNil(this.currentPhylogram)) {
+        this.currentPhylogram.update({ showLengths: newVal })
+      }
     }
   },
   mounted () {

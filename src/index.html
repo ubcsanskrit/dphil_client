@@ -23,6 +23,7 @@
   import VueRouter from 'vue-router'
   import VueMaterial from 'vue-material'
   import VueHead from 'vue-head'
+  import VueLodash from 'vue-lodash/dist/vue-lodash.min'
 
   // Vue Store
   import store from './store'
@@ -31,6 +32,7 @@
   import App from './components/app.vue'
   import Home from './components/home.vue'
   import Tree from './components/tree.vue'
+  import Matrix from './components/matrix.vue'
 
   // Vue Setup
   Vue.use(VueElectron)
@@ -38,11 +40,13 @@
   Vue.use(VueRouter)
   Vue.use(VueMaterial)
   Vue.use(VueHead)
+  Vue.use(VueLodash, _)
 
   const router = new VueRouter({
     routes: [
       { path: '/', name: 'home', component: Home },
-      { path: '/tree', name: 'tree', component: Tree }
+      { path: '/tree', name: 'tree', component: Tree },
+      { path: '/matrix', name: 'matrix', component: Matrix }
     ]
   })
 
@@ -54,6 +58,7 @@
   })
   app.$mount('#app')
 
+  store.dispatch('data/loadDataFile', 'src/default_dataset.jsonld')
   ipcRenderer.on('loadDataFile', (event, dataFile) => {
     store.dispatch('data/loadDataFile', dataFile)
   })

@@ -12,24 +12,89 @@ const dataModule = {
     changed: false,
     openFile: null,
     treeData: {},
-    treeStats: {},
-    currentTree: null
+    selectedTreeId: null,
+    selectedNodeId: null,
+    matrixCharacters: {},
+    matrixTaxa: {},
+    reconstructed: {},
+    navCharsPerPage: 8,
+    navCharStart: 1
   },
   mutations: {
     openFile (state, filePath) {
-      state.openFile = filePath
+      Vue.set(state, 'openFile', filePath)
     },
     treeData (state, treeData) {
-      state.treeData = treeData
+      Vue.set(state, 'treeData', treeData)
     },
-    treeStats (state, treeStats) {
-      state.treeStats = treeStats
+    selectedTreeId (state, id) {
+      state.selectedTreeId = id
+    },
+    selectedNodeId (state, id) {
+      state.selectedNodeId = id
+    },
+    matrixCharacters (state, characters) {
+      Vue.set(state, 'matrixCharacters', characters)
+    },
+    matrixTaxa (state, taxa) {
+      state.matrixTaxa = taxa
     },
     changed (state, value) {
       state.changed = !!value
     },
-    currentTree (state, id) {
-      state.currentTree = id
+    reconstructed (state, {rootId, charId, value}) {
+      if (_.isUndefined(state.reconstructed[rootId])) {
+        Vue.set(state.reconstructed, rootId, {})
+      }
+      if (_.isNil(value)) {
+        Vue.delete(state.reconstructed[rootId], charId)
+      } else {
+        Vue.set(state.reconstructed[rootId], charId, value)
+      }
+    },
+    navCharsPerPage (state, value) {
+      state.navCharsPerPage = value
+    },
+    navCharStart (state, value) {
+      state.navCharStart = value
+    }
+  },
+  getters: {
+    numTrees (state) {
+      return _.size(state.treeData)
+    },
+    selectedTree (state) {
+      return _.get(state.treeData, state.selectedTreeId) || {}
+    },
+    selectedTreeNodes (state, getters) {
+      return _.get(getters.selectedTree, 'nodes')
+    },
+    selectedNode (state, getters) {
+      return _.get(getters.selectedTree, `nodes.${state.selectedNodeId}`)
+    },
+    nodesFromCurrent (state, getters) {
+      if (!_.isNil(getters.selectedNode)) {
+        return getters.selectedNode.descendants()
+      }
+    },
+    taxaFromCurrent (state, getters) {
+      let newRoot = getters.selectedNode
+      if (_.isNil(newRoot)) { return }
+      return _.keyBy(newRoot.leaves(), (node) => node.data.id)
+    },
+    matrixSliceChars (state, getters) {
+      if (_.get(state.selectedTree, 'hierarchy') === getters.selectedNode) {
+        return state.matrixCharacters
+      }
+      return _.mapValues(state.matrixCharacters, (char, id) => {
+        return char.filterData({nodes: _.keys(getters.taxaFromCurrent)})
+      })
+    },
+    numChars (state, getters) {
+      return _.size(getters.matrixSliceChars)
+    },
+    reconstructedCurrent (state, getters) {
+      return state.reconstructed[state.selectedNodeId] || {}
     }
   },
   actions: {
@@ -47,9 +112,10 @@ const dataModule = {
       let newData = loadDataFromFile(filePath)
       commit('openFile', newData.openFile)
       commit('treeData', newData.treeData)
-      commit('treeStats', newData.treeStats)
-      let firstTreeId = _.keys(state.treeData)[0]
-      commit('currentTree', firstTreeId)
+      commit('selectedTreeId', _.keys(state.treeData)[0])
+      commit('selectedNodeId', _.get(state.treeData, `${state.selectedTreeId}.rootId`))
+      commit('matrixCharacters', newData.matrix.characters)
+      commit('matrixTaxa', newData.matrix.taxaNames)
       commit('changed', false)
     }
   }

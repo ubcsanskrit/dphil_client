@@ -17,26 +17,46 @@
     </md-toolbar>
     <md-list>
       <md-list-item>
-        <router-link to="/" exact>
+        <router-link to="/" exact @click.native="toggleLeftSidenav">
           <md-icon>home</md-icon> <span>Home</span>
         </router-link>
       </md-list-item>
 
       <md-list-item>
-        <router-link to="/tree" exact>
-          <md-icon>send</md-icon> <span>Tree View</span>
+        <router-link to="/tree" exact @click.native="toggleLeftSidenav">
+          <md-icon>device_hub</md-icon> <span>Tree View</span>
+        </router-link>
+      </md-list-item>
+
+      <md-list-item>
+        <router-link to="/matrix" exact @click.native="toggleLeftSidenav">
+          <md-icon>view_module</md-icon> <span>Matrix View</span>
         </router-link>
       </md-list-item>
     </md-list>
+    <p>File Loaded: {{openFileTruncated}}</p>
   </md-sidenav>
 </md-layout>
 </template>
 
 <script>
+
 export default {
   computed: {
     headerText () {
       return this.$store.state.headerText
+    },
+    openFileTruncated () {
+      let openFile = this.$store.state.data.openFile
+      if (_.isString(openFile)) {
+        const curLen = openFile.length
+        const maxLen = 25
+        if (curLen > maxLen) {
+          return `\`…${openFile.substring(curLen - (maxLen - 1), curLen)}\``
+        }
+        return openFile
+      }
+      return '[none]'
     }
   },
   methods: {

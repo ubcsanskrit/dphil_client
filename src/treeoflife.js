@@ -1,6 +1,7 @@
 import * as d3 from 'd3'
+import store from './store'
 
-export function phylogram (selector, nodes, stats, params) {
+export function phylogram (selector, tree, params) {
   let defaults = {
     outerRadius: 400,
     innerRadius: 200,
@@ -9,7 +10,7 @@ export function phylogram (selector, nodes, stats, params) {
   let p = _.merge({}, defaults, params)
 
   let statsList = []
-  _.forOwn(stats, function (value, key) { statsList.push(`${_.startCase(key)}: ${value}`) })
+  _.forOwn(tree.stats, function (value, key) { statsList.push(`${_.startCase(key)}: ${value}`) })
 
   let color = d3.scaleOrdinal()
       .domain(statsList)
@@ -49,6 +50,14 @@ export function phylogram (selector, nodes, stats, params) {
 
   function linkExtensionConstant (d) {
     return linkStep(d.target.x, d.target.y, d.target.x, p.innerRadius)
+  }
+
+  function labelVariable (d) {
+    return 'rotate(' + (d.x - 90) + ')translate(' + (d.radius + 0.5) + ', 0)' + (d.x < 180 ? '' : 'rotate(180)')
+  }
+
+  function labelConstant (d) {
+    return 'rotate(' + (d.x - 90) + ')translate(' + (d.y + 0.5) + ', 0)' + (d.x < 180 ? '' : 'rotate(180)')
   }
 
   // Like d3.svg.diagonal.radial, but with square corners.
@@ -96,10 +105,11 @@ export function phylogram (selector, nodes, stats, params) {
   let chart = svg.append('g')
       // .attr('transform', 'translate(' + outerRadius + ',' + (outerRadius / 1.5) + ')')
 
-  let root = d3.hierarchy(nodes, function (d) { return d.children })
-      .sum(function (d) { return d.children ? 0 : 1 })
-      .sort(function (a, b) { return (a.value - b.value) || d3.ascending(a.data.length, b.data.length) })
+  // let root = d3.hierarchy(nodes, function (d) { return d.children })
+  //     .sum(function (d) { return d.children ? 0 : 1 })
+  //     .sort(function (a, b) { return (a.value - b.value) || d3.ascending(a.data.length, b.data.length) })
 
+  let root = tree.hierarchy
   cluster(root)
 
   setRadius(root, root.data.length = 0, p.innerRadius / maxLength(root))
@@ -123,21 +133,38 @@ export function phylogram (selector, nodes, stats, params) {
       .attr('stroke', function (d) { return d.target.color })
 
   chart.append('g')
-      .attr('class', 'labels')
+      .attr('class', 'labels leaves')
       .selectAll('text')
       .data(root.leaves())
       .enter().append('text')
       .attr('dy', '.31em')
-      .attr('transform', function (d) { return 'rotate(' + (d.x - 90) + ')translate(' + (p.innerRadius + 4) + ',0)' + (d.x < 180 ? '' : 'rotate(180)') })
+      .attr('transform', function (d) { return 'rotate(' + (d.x - 90) + ')translate(' + (d.y + 4) + ', 0)' + (d.x < 180 ? '' : 'rotate(180)') })
       .attr('text-anchor', function (d) { return d.x < 180 ? 'start' : 'end' })
       .text(function (d) { return _.replace(d.data.name, /_/g, ' ') })
+      .attr('data-node-id', function (d) { return d.data.id })
       .on('mouseover', mouseovered(true))
       .on('mouseout', mouseovered(false))
+      .on('click', selectNode(this))
+
+  let intermediates = chart.append('g')
+       .attr('class', 'labels intermediate')
+       .selectAll('text')
+       .data(_.filter(root.descendants(), 'children'))
+       .enter().append('text')
+       .attr('dy', '.31em')
+       .attr('transform', p.showLengths ? labelVariable : labelConstant)
+       .attr('text-anchor', function (d) { return d.x < 180 ? 'start' : 'end' })
+       .text(function (d) { return _.replace(d.data.name, /_/g, ' ') })
+       .attr('data-node-id', function (d) { return d.data.id })
+       .on('mouseover', mouseovered(true))
+       .on('mouseout', mouseovered(false))
+       .on('click', selectNode(this))
 
   function updateLengths () {
     var t = d3.transition().duration(750)
     linkExtension.transition(t).attr('d', p.showLengths ? linkExtensionVariable : linkExtensionConstant)
     link.transition(t).attr('d', p.showLengths ? linkVariable : linkConstant)
+    intermediates.transition(t).attr('transform', p.showLengths ? labelVariable : labelConstant)
   }
 
   function mouseovered (active) {
@@ -151,6 +178,27 @@ export function phylogram (selector, nodes, stats, params) {
     }
   }
 
+  function updateSelected () {
+    let id = store.state.data.selectedNodeId
+    if (_.isNil(id)) {
+      store.commit('data/selectedNodeId', root.data.id)
+    }
+
+    d3.selectAll('text')
+    .classed('label--selected', false)
+
+    d3.select(`[data-node-id='${id}']`)
+    .classed('label--selected', true)
+  }
+  updateSelected()
+
+  function selectNode () {
+    return (d) => {
+      store.commit('data/selectedNodeId', _.get(d, 'data.id'))
+      updateSelected()
+    }
+  }
+
   function moveToFront () {
     this.parentNode.appendChild(this)
   }
@@ -159,10 +207,10 @@ export function phylogram (selector, nodes, stats, params) {
     root,
     update (params) {
       if (_.has(params, 'showLengths') && params.showLengths !== p.showLengths) {
-        console.debug('showLengths changed')
         p.showLengths = params.showLengths
         updateLengths()
       }
+      updateSelected()
     }
   }
 }
